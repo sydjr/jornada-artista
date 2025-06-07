@@ -1,0 +1,21 @@
+{
+  "name": "Jornada do Artista",
+  "short_name": "Jornada10k",
+  "description": "Um tracker para a jornada de 10.000 horas de prática de um artista.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#181825",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
