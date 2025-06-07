@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jornada do Artista: Tracker 10k</title>
+    
+    <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%231a1a1a' stroke='%2314b8a6' stroke-width='4'/%3E%3Cpath d='M50 20 V 50 L 75 62.5' fill='none' stroke='%23f0f0f0' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M50 50 L30 35' fill='none' stroke='%2306b6d4' stroke-width='8' stroke-linecap='round'/%3E%3Ctext x='50' y='88' font-family='Bungee, sans-serif' font-size='20' fill='%2314b8a6' text-anchor='middle'%3E10k%3C/text%3E%3C/svg%3E">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #1a1a1a; --bg-secondary: #2a2a2a; --bg-card: #1f2937;
+            --text-primary: #f0f0f0; --text-secondary: #a0a0a0;
+            --accent-primary: #06b6d4; --accent-secondary: #14b8a6;
+            --font-display: 'Bungee', cursive; --font-body: 'Inter', sans-serif;
+        }
+        .theme-night-studio { --bg-primary: #181825; --bg-secondary: #2a2a3a; --bg-card: #1f2937; --text-primary: #eef2ff; --text-secondary: #94a3b8; --accent-primary: #06b6d4; --accent-secondary: #14b8a6; }
+        .theme-watercolor { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-card: #ffffff; --text-primary: #334155; --text-secondary: #64748b; --accent-primary: #6366f1; --accent-secondary: #ec4899; }
+        .theme-graphite { --bg-primary: #171717; --bg-secondary: #262626; --bg-card: #262626; --text-primary: #f5f5f5; --text-secondary: #a3a3a3; --accent-primary: #facc15; --accent-secondary: #e5e5e5; }
+        .theme-sketchbook { --bg-primary: #fdf6e3; --bg-secondary: #f5efde; --bg-card: #f5efde; --text-primary: #002b36; --text-secondary: #586e75; --accent-primary: #cb4b16; --accent-secondary: #268bd2; }
+        .theme-retro-dream { --bg-primary: #2e1065; --bg-secondary: #4338ca; --bg-card: #3730a3; --text-primary: #e0e7ff; --text-secondary: #c7d2fe; --accent-primary: #f472b6; --accent-secondary: #fbbf24; }
+        body { font-family: var(--font-body); background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
+        main, header { transition: opacity 0.5s; }
+        .app-loading main, .app-loading header, .app-loading .fixed { opacity: 0; pointer-events: none; }
+        .focus-mode-active main, .focus-mode-active header { opacity: 0; pointer-events: none; }
+        .focus-mode-active #focus-mode-card { opacity: 1 !important; z-index: 60 !important; pointer-events: auto !important;}
+        .bungee-font { font-family: var(--font-display); }
+        .glow-card { background-color: var(--bg-card); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); transition: background-color 0.3s; }
+        .tab-btn.active, .timer-mode-btn.active { background-color: var(--accent-primary); color: white; }
+        select, input[type="number"], input[type="text"], textarea { background-color: var(--bg-secondary); border-color: #4b5563; color: var(--text-primary); }
+        select:focus, input:focus, textarea:focus { --tw-ring-color: var(--accent-primary); border-color: var(--accent-primary); }
+        .achievement-icon.locked { filter: grayscale(1); opacity: 0.5; }
+        .gemini-output h3 { font-size: 1.1em; font-weight: bold; margin-top: 1em; color: var(--accent-secondary); }
+        .gemini-output ul { list-style-type: disc; margin-left: 1.5em; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loader { border-top-color: var(--accent-primary); animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="antialiased app-loading">
+    <div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center z-50" style="background-color: var(--bg-primary);">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4" style="border-color: var(--bg-secondary);"></div>
+        <p class="mt-4 text-lg" style="color: var(--text-secondary);">Conectando à sua jornada...</p>
+    </div>
+    <div class="fixed bottom-4 right-4 z-40 flex flex-col gap-3">
+        <button id="gemini-idea-btn" title="Gerador de Ideias" class="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110">✨</button>
+        <button id="focus-mode-btn" title="Modo Foco" class="w-14 h-14 bg-yellow-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></button>
+        <button id="settings-btn" title="Configurações" class="w-14 h-14 bg-slate-600 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>
+    </div>
+    <div id="app-container" class="min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+        <header class="text-center mb-8"><h1 class="bungee-font text-4xl sm:text-5xl" style="color: var(--accent-primary);">Jornada do Artista</h1><p class="text-lg" style="color: var(--text-secondary);">Rumo às 10.000 Horas</p><p id="user-id-display" class="text-xs text-slate-500 mt-2 break-all px-4"></p></header>
+        <main class="w-full max-w-2xl space-y-8">
+            <section class="glow-card rounded-2xl p-6 text-center"><p class="text-sm" style="color: var(--text-secondary);">TEMPO TOTAL</p><h2 id="total-hours" class="bungee-font text-6xl sm:text-7xl my-2">0.0</h2><div class="mt-4"><div class="flex justify-between items-center text-sm font-medium mb-2"><span id="current-level-name"></span><span id="next-level-name"></span></div><div class="w-full rounded-full h-4" style="background-color: var(--bg-secondary);"><div id="progress-bar" class="h-4 rounded-full" style="background-color: var(--accent-primary); width: 0%;"></div></div><p id="progress-text" class="text-xs mt-2" style="color: var(--text-secondary);"></p></div></section>
+            <section class="glow-card rounded-2xl p-6"><div class="flex justify-between items-center mb-2"><h3 class="font-bold text-lg">Metas da Semana</h3><button id="edit-goal-btn" class="text-xs" style="color: var(--accent-primary);">Editar</button></div><p class="text-sm" style="color: var(--text-secondary);">Progresso para a meta de <span id="weekly-goal-display" class="font-bold">10</span> horas:</p><div class="w-full rounded-full h-2.5 mt-2" style="background-color: var(--bg-secondary);"><div id="goal-progress-bar" class="h-2.5 rounded-full" style="background-color: var(--accent-secondary); width: 0%;"></div></div></section>
+            <section class="glow-card rounded-2xl p-6"><h3 class="font-bold text-lg mb-4">Registrar Prática</h3><div class="grid grid-cols-2 gap-4 mb-4"><div><label for="main-category-select" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Categoria</label><select id="main-category-select" class="w-full p-2 rounded-lg border-2"><option value="illustration">Ilustração</option><option value="animation">Animação</option></select></div><div><div class="flex items-center justify-between mb-1"><label for="sub-category-select" class="block text-sm font-medium" style="color: var(--text-secondary);">Sub-categoria</label><div class="flex gap-2"><button id="add-subcategory-btn" title="Adicionar nova sub-categoria" class="font-bold text-lg leading-none" style="color: var(--accent-primary);">+</button><button id="remove-subcategory-btn" title="Remover sub-categoria selecionada" class="font-bold text-lg leading-none text-red-500">-</button></div></div><select id="sub-category-select" class="w-full p-2 rounded-lg border-2"></select></div></div><div class="mb-4"><label for="session-notes" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Diário de Bordo (Opcional)</label><textarea id="session-notes" rows="2" class="w-full p-2 rounded-lg border-2 placeholder:text-slate-500" placeholder="O que você aprendeu ou descobriu nesta sessão?"></textarea></div><div class="border-t my-4" style="border-color: #4b5563;"></div><div id="timer-section"><h4 class="font-semibold mb-2">Timer & Cronômetro</h4><div class="flex justify-center rounded-lg p-1 mb-2" style="background-color: var(--bg-secondary);"><button id="pomodoro-mode-btn" class="timer-mode-btn flex-1 py-1 px-3 rounded-md text-sm font-medium transition active">Pomodoro</button><button id="stopwatch-mode-btn" class="timer-mode-btn flex-1 py-1 px-3 rounded-md text-sm font-medium transition">Cronômetro</button></div><div id="timer-display" class="bungee-font text-6xl text-center my-4">25:00</div><div class="grid grid-cols-3 gap-2"><button id="start-pause-btn" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-3 rounded-lg transition">Iniciar</button><button id="reset-btn" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-3 rounded-lg transition">Resetar</button><button id="stop-save-btn" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-lg transition">Parar e Salvar</button></div></div><div class="border-t my-4" style="border-color: #4b5563;"></div><div id="manual-log-section"><h4 class="font-semibold mb-2">Registro Manual</h4><div class="flex items-end gap-4"><input type="number" id="hours-input" placeholder="Horas (ex: 2.5)" class="flex-1 p-2 rounded-lg border-2"><button id="add-hours-btn" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105">Adicionar</button></div></div></section>
+            <section class="glow-card rounded-2xl p-6"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Conquistas</h3><button id="toggle-achievements-btn" class="text-xs" style="color: var(--accent-primary);">Mostrar Todas</button></div><div id="achievements-grid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4 text-center"></div></section>
+            <section class="glow-card rounded-2xl p-6"><h3 class="font-bold text-lg mb-4">Análise de Desempenho</h3><div class="flex justify-center rounded-lg p-1 mb-4" style="background-color: var(--bg-secondary);"><button class="tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition active" data-period="day">Dia</button><button class="tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition" data-period="week">Semana</button><button class="tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition" data-period="month">Mês</button></div><div class="relative h-64 flex items-center justify-center"><canvas id="activity-chart"></canvas><p id="chart-placeholder" class="absolute text-center" style="color: var(--text-secondary);">Sem dados para este período.</p></div></section>
+            <section class="glow-card rounded-2xl p-6"><h3 class="font-bold text-lg mb-4">Histórico de Sessões</h3><ul id="history-list" class="space-y-3 max-h-80 overflow-y-auto pr-2"></ul></section>
+        </main>
+        <section id="focus-mode-card" class="fixed inset-0 bg-black/80 backdrop-blur-sm p-4 flex-col items-center justify-center space-y-8 text-center opacity-0 pointer-events-none z-0 transition-opacity flex"><div id="focus-timer-display" class="bungee-font text-8xl md:text-9xl text-white">25:00</div><div id="focus-activity-display" class="text-2xl font-bold text-slate-300"></div><button id="exit-focus-mode-btn" class="absolute bottom-10 bg-red-600 text-white font-bold py-3 px-6 rounded-lg">Sair do Modo Foco</button></section>
+    </div>
+    <div id="generic-modal-backdrop" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div id="generic-modal" class="glow-card rounded-2xl p-8 max-w-sm w-full relative">
+            <button id="close-generic-modal-btn" class="absolute top-4 right-4 hover:text-white text-2xl" style="color: var(--text-secondary);">&times;</button>
+            <h2 id="generic-modal-title" class="bungee-font text-2xl mb-6 text-center" style="color: var(--accent-primary);"></h2>
+            <div id="generic-modal-body" class="space-y-4 text-left"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==============================================================================
+        // ETAPA 2 - PARTE A: COLE A CONFIGURAÇÃO DO SEU FIREBASE AQUI
+        // ==============================================================================
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAbNeKNK5-TmuBs6Mtj1t2ioYY8P5W5GBM",
+  authDomain: "jornada-do-artista-10k.firebaseapp.com",
+  projectId: "jornada-do-artista-10k",
+  storageBucket: "jornada-do-artista-10k.firebasestorage.app",
+  messagingSenderId: "585104803585",
+  appId: "1:585104803585:web:8dd21b09050bc2f757fd00",
+  measurementId: "G-BX0V2X9WGK"
+        };
+        // ==============================================================================
+        
+        // ==============================================================================
+        // ETAPA 2 - PARTE B: COLE A SUA CHAVE DA API DO GEMINI AQUI (Opcional)
+        // Obtenha em: https://aistudio.google.com/app/apikey
+        // AVISO: Não compartilhe esta chave publicamente. É para seu uso pessoal.
+        // ==============================================================================
+        const GEMINI_API_KEY = "curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=GEMINI_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'";
+        // ==============================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let db, auth, userId, progressDocRef, unsubscribe, audioCtx;
+            
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) { 
+                console.error("Erro ao inicializar Firebase:", e); 
+                alert("Erro na configuração do Firebase. Verifique se você colou o objeto de configuração corretamente.");
+                return;
+            }
+            
+            const LEVEL_SCALE = [
+                { name: "Iniciante", stage: 1, threshold: 0 }, { name: "Curioso", stage: 1, threshold: 1 },
+                { name: "Explorador", stage: 1, threshold: 5 }, { name: "Aprendiz", stage: 1, threshold: 10 },
+                { name: "Esboçando", stage: 1, threshold: 15 }, { name: "Praticante", stage: 1, threshold: 25 },
+                { name: "Focado", stage: 1, threshold: 40 }, { name: "Jornaleiro", stage: 1, threshold: 50 },
+                { name: "Dedicado", stage: 1, threshold: 75 }, { name: "Promissor", stage: 1, threshold: 100 },
+                { name: "Artesão", stage: 2, threshold: 150 }, { name: "Construtor", stage: 2, threshold: 200 },
+                { name: "Habilidoso", stage: 2, threshold: 300 }, { name: "Polido", stage: 2, threshold: 400 },
+                { name: "Especialista", stage: 2, threshold: 500 }, { name: "Resoluto", stage: 2, threshold: 650 },
+                { name: "Veterano", stage: 2, threshold: 800 }, { name: "Proficiente", stage: 2, threshold: 1000 },
+                { name: "Experiente", stage: 3, threshold: 1250 }, { name: "Confiante", stage: 3, threshold: 1500 },
+                { name: "Fluente", stage: 3, threshold: 2000 }, { name: "Virtuoso", stage: 3, threshold: 2500 },
+                { name: "Inovador", stage: 3, threshold: 3000 }, { name: "Respeitado", stage: 3, threshold: 3500 },
+                { name: "Mentor", stage: 3, threshold: 4000 }, { name: "Mestre", stage: 3, threshold: 5000 },
+                { name: "Sábio", stage: 4, threshold: 6000 }, { name: "Grão-Mestre", stage: 4, threshold: 7500 },
+                { name: "Ícone", stage: 4, threshold: 9000 }, { name: "Lenda", stage: 4, threshold: 10000 },
+            ];
+
+            let currentUserData = {};
+            let showAllAchievements = false;
+
+            const ui = {
+                body: document.body, totalHours: document.getElementById('total-hours'), progressBar: document.getElementById('progress-bar'),
+                currentLevelName: document.getElementById('current-level-name'), nextLevelName: document.getElementById('next-level-name'), progressText: document.getElementById('progress-text'),
+                mainCategorySelect: document.getElementById('main-category-select'), subCategorySelect: document.getElementById('sub-category-select'),
+                addBtn: document.getElementById('add-subcategory-btn'), removeBtn: document.getElementById('remove-subcategory-btn'),
+                sessionNotes: document.getElementById('session-notes'), hoursInput: document.getElementById('hours-input'),
+                addHoursBtn: document.getElementById('add-hours-btn'), historyList: document.getElementById('history-list'),
+                userIdDisplay: document.getElementById('user-id-display'), timerDisplay: document.getElementById('timer-display'),
+                startPauseBtn: document.getElementById('start-pause-btn'), resetBtn: document.getElementById('reset-btn'),
+                pomodoroModeBtn: document.getElementById('pomodoro-mode-btn'), stopwatchModeBtn: document.getElementById('stopwatch-mode-btn'),
+                stopSaveBtn: document.getElementById('stop-save-btn'), focusModeBtn: document.getElementById('focus-mode-btn'),
+                exitFocusModeBtn: document.getElementById('exit-focus-mode-btn'), focusModeCard: document.getElementById('focus-mode-card'),
+                focusTimerDisplay: document.getElementById('focus-timer-display'), focusActivityDisplay: document.getElementById('focus-activity-display'),
+                activityChartCanvas: document.getElementById('activity-chart'), chartPlaceholder: document.getElementById('chart-placeholder'),
+                tabButtons: document.querySelectorAll('.tab-btn'), goalProgressBar: document.getElementById('goal-progress-bar'),
+                weeklyGoalDisplay: document.getElementById('weekly-goal-display'), editGoalBtn: document.getElementById('edit-goal-btn'),
+                achievementsGrid: document.getElementById('achievements-grid'), toggleAchievementsBtn: document.getElementById('toggle-achievements-btn'),
+                genericModalBackdrop: document.getElementById('generic-modal-backdrop'), genericModalTitle: document.getElementById('generic-modal-title'),
+                genericModalBody: document.getElementById('generic-modal-body'), closeGenericModalBtn: document.getElementById('close-generic-modal-btn'),
+                settingsBtn: document.getElementById('settings-btn'), geminiIdeaBtn: document.getElementById('gemini-idea-btn'),
+                loadingOverlay: document.getElementById('loading-overlay'),
+            };
+            
+            let activityChart = null;
+            let timerInterval = null;
+            let timerState = {
+                mode: 'pomodoro', secondsRemaining: 25 * 60,
+                isRunning: false, isPomodoroCycle: true,
+                elapsedSeconds: 0,
+            };
+
+            function populateSubCategories() {
+                const mainCategory = ui.mainCategorySelect.value;
+                const customSubs = currentUserData?.settings?.customSubCategories;
+                if (!customSubs || !customSubs[mainCategory]) { ui.subCategorySelect.innerHTML = ''; return; }
+                const options = customSubs[mainCategory] || [];
+                ui.subCategorySelect.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            }
+
+            async function addHours(hoursToAdd, buttonElement) {
+                const mainCategory = ui.mainCategorySelect.value;
+                const subCategory = ui.subCategorySelect.value;
+                const note = ui.sessionNotes.value.trim();
+                if (!subCategory) { alert("Adicione uma sub-categoria antes de registrar."); return; }
+                if (isNaN(hoursToAdd) || hoursToAdd <= 0) { alert("Insira um número válido de horas."); return; }
+                buttonElement.disabled = true;
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = "Salvando...";
+                try {
+                    const docSnap = await getDoc(progressDocRef);
+                    let data = docSnap.exists() ? docSnap.data() : createInitialData();
+                    const oldTotalHours = data.totalHours || 0;
+                    data.totalHours = oldTotalHours + hoursToAdd;
+                    if (!data.subCategoryHours) data.subCategoryHours = {};
+                    const subCategoryKey = `${mainCategory}:${subCategory}`;
+                    data.subCategoryHours[subCategoryKey] = (data.subCategoryHours[subCategoryKey] || 0) + hoursToAdd;
+                    const newHistoryEntry = { hours: hoursToAdd, mainCategory, subCategory, note, timestamp: Date.now() };
+                    data.history = [newHistoryEntry, ...(data.history || []).slice(0, 499)];
+                    await checkAndUnlockAchievements(data, oldTotalHours);
+                    await setDoc(progressDocRef, data, { merge: true });
+                    ui.hoursInput.value = ''; ui.sessionNotes.value = '';
+                } catch (error) { console.error("Erro ao adicionar horas:", error);
+                } finally { buttonElement.disabled = false; buttonElement.textContent = originalText; }
+            }
+            
+            function updateUI(data) {
+                currentUserData = data;
+                const { totalHours = 0, history = [], achievements = [], settings = {}, goals = {} } = data;
+                ui.body.className = `antialiased theme-${settings.theme || 'night-studio'}`;
+                ui.totalHours.textContent = totalHours.toFixed(1);
+
+                let currentLevel = LEVEL_SCALE[0], nextLevel = LEVEL_SCALE[1];
+                for (let i = 0; i < LEVEL_SCALE.length; i++) {
+                    if (totalHours >= LEVEL_SCALE[i].threshold) {
+                        currentLevel = LEVEL_SCALE[i];
+                        nextLevel = i + 1 < LEVEL_SCALE.length ? LEVEL_SCALE[i + 1] : LEVEL_SCALE[i];
+                    } else break;
+                }
+                ui.currentLevelName.textContent = currentLevel.name;
+                if (currentLevel.name === nextLevel.name) {
+                    ui.nextLevelName.textContent = "Maestria!"; ui.progressBar.style.width = '100%';
+                    ui.progressText.textContent = "Parabéns, você alcançou o ápice!";
+                } else {
+                    ui.nextLevelName.textContent = nextLevel.name;
+                    const hoursForNext = nextLevel.threshold - currentLevel.threshold;
+                    const hoursIntoLevel = totalHours - currentLevel.threshold;
+                    ui.progressBar.style.width = `${Math.min(100, (hoursIntoLevel / hoursForNext) * 100)}%`;
+                    ui.progressText.textContent = `${hoursIntoLevel.toFixed(1)} / ${hoursForNext}h`;
+                }
+
+                ui.weeklyGoalDisplay.textContent = goals.weekly || 10;
+                const now = new Date(); const startOfWeek = new Date(now.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)));
+                startOfWeek.setHours(0, 0, 0, 0);
+                const weeklyHours = history.filter(e => e.timestamp >= startOfWeek.getTime()).reduce((sum, e) => sum + e.hours, 0);
+                ui.goalProgressBar.style.width = `${Math.min(100, (weeklyHours / (goals.weekly || 10)) * 100)}%`;
+                ui.historyList.innerHTML = history.length === 0 ? '<li class="text-center" style="color: var(--text-secondary);">Nenhuma sessão registrada.</li>' : 
+                    history.map(entry => `
+                        <li class="p-3 rounded-lg" style="background-color: var(--bg-secondary);">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold">${entry.hours.toFixed(2)}h</span>
+                                <div class="flex items-center gap-2">
+                                    ${entry.note ? `<button class="gemini-analyze-btn text-xs" data-note="${entry.note.replace(/"/g, '&quot;')}">Analisar ✨</button>` : ''}
+                                    <span class="text-xs" style="color: var(--text-secondary);">${new Date(entry.timestamp).toLocaleString('pt-BR')}</span>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium" style="color: var(--accent-primary);">${entry.mainCategory} - ${entry.subCategory}</p>
+                            ${entry.note ? `<p class="text-sm mt-1 pt-1 border-t" style="border-color: #4b5563;">${entry.note.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>` : ''}
+                        </li>
+                    `).join('');
+                
+                document.querySelectorAll('.gemini-analyze-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                    const note = e.target.dataset.note;
+                    analyzeSession(note);
+                }));
+
+                populateSubCategories();
+                updateChart(history);
+                updateAchievements(achievements);
+                resetTimer(); 
+            }
+
+            function updateChart(history) {
+                const activePeriod = document.querySelector('.tab-btn.active').dataset.period;
+                const now = new Date(); let startDate;
+                if (activePeriod === 'day') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                else if (activePeriod === 'week') { const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; startDate = new Date(new Date().setDate(now.getDate() - dayOfWeek)); startDate.setHours(0, 0, 0, 0);
+                } else { startDate = new Date(now.getFullYear(), now.getMonth(), 1); }
+                const filteredHistory = history.filter(entry => entry.timestamp >= startDate.getTime());
+                const chartData = filteredHistory.reduce((acc, entry) => { if (!acc[entry.subCategory]) acc[entry.subCategory] = 0; acc[entry.subCategory] += entry.hours; return acc; }, {});
+                if (activityChart) activityChart.destroy();
+                const hasData = Object.keys(chartData).length > 0;
+                ui.chartPlaceholder.style.display = hasData ? 'none' : 'block';
+                ui.activityChartCanvas.style.display = hasData ? 'block' : 'none';
+                if (!hasData) return;
+                activityChart = new Chart(ui.activityChartCanvas, {
+                    type: 'doughnut', data: { labels: Object.keys(chartData), datasets: [{ data: Object.values(chartData), backgroundColor: ['#06b6d4', '#14b8a6', '#f59e0b', '#818cf8', '#ef4444', '#f97316', '#a78bfa', '#ec4899'], borderColor: 'var(--bg-card)', borderWidth: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: true, position: 'bottom', labels: { color: 'var(--text-primary)' } } } }
+                });
+            }
+            
+            const ALL_ACHIEVEMENTS = (() => {
+                const achievements = {}; const stageNames = ["Descoberta", "Fundamentação", "Proficiência", "Maestria"]; const stageIcons = ['🌱', '🏛️', '🧙', '🌟'];
+                LEVEL_SCALE.forEach((level) => { achievements[`level_${level.threshold}`] = { type: 'level', name: level.name, desc: `Atinja ${level.threshold} horas.`, icon: '🏆', threshold: level.threshold }; });
+                stageNames.forEach((name, index) => { const stage = index + 1; const firstLevelOfStage = LEVEL_SCALE.find(l => l.stage === stage); achievements[`stage_${stage}`] = { type: 'stage', name: `Estágio: ${name}`, desc: `Alcance o estágio de ${name}.`, icon: stageIcons[index], threshold: firstLevelOfStage.threshold }; });
+                Object.assign(achievements, {
+                    'marathon': { type: 'milestone', name: 'Maratonista', desc: 'Sessão de 4+ horas.', icon: '🏃' }, 'consistent_3': { type: 'milestone', name: 'Consistente', desc: 'Pratique por 3 dias seguidos.', icon: '🥉' },
+                    'consistent_7': { type: 'milestone', name: 'Disciplinado', desc: 'Pratique por 7 dias seguidos.', icon: '🥈' }, 'consistent_30': { type: 'milestone', name: 'Incansável', desc: 'Pratique por 30 dias seguidos.', icon: '🥇' },
+                });
+                return achievements;
+            })();
+
+            function updateAchievements(unlockedIds = []) {
+                const source = showAllAchievements ? Object.entries(ALL_ACHIEVEMENTS) : unlockedIds.map(id => [id, ALL_ACHIEVEMENTS[id]]).filter(Boolean);
+                ui.achievementsGrid.innerHTML = source.sort(([,a],[,b]) => a.threshold - b.threshold).map(([id, ach]) => {
+                    const unlocked = unlockedIds.includes(id);
+                    return `<div class="flex flex-col items-center" title="${ach.name}: ${ach.desc}"><div class="achievement-icon w-16 h-16 rounded-full flex items-center justify-center text-3xl ${unlocked ? 'bg-yellow-400' : 'bg-slate-700'} ${!unlocked ? 'locked' : ''}">${ach.icon}</div><p class="text-xs mt-1 h-8 flex items-center justify-center text-center ${unlocked ? '' : 'text-slate-500'}">${ach.name}</p></div>`;
+                }).join('');
+            }
+            
+            async function checkAndUnlockAchievements(data, oldTotalHours) {
+                 const { totalHours, history, achievements } = data;
+                 const unlocked = achievements || [];
+                 for (const [id, ach] of Object.entries(ALL_ACHIEVEMENTS)) {
+                    if (unlocked.includes(id)) continue;
+                    let condition = false;
+                    if (ach.type === 'level' || ach.type === 'stage') { condition = oldTotalHours < ach.threshold && totalHours >= ach.threshold; } 
+                    else if (ach.type === 'milestone') {
+                        if (id === 'marathon') condition = history[0].hours >= 4;
+                        if (id.startsWith('consistent_')) {
+                            const days = parseInt(id.split('_')[1]);
+                            const practiceDays = [...new Set(history.map(e => new Date(e.timestamp).toDateString()))].sort((a,b) => new Date(b) - new Date(a));
+                            let streak = practiceDays.length > 0 ? 1 : 0;
+                            for (let i = 0; i < practiceDays.length - 1; i++) { if ((new Date(practiceDays[i]) - new Date(practiceDays[i+1])) / (1000*3600*24) === 1) streak++; else break; }
+                            condition = streak >= days;
+                        }
+                    }
+                    if (condition) { unlocked.push(id); showModal('achievement', { icon: ach.icon, name: ach.name, desc: ach.desc }); }
+                 }
+                 data.achievements = unlocked;
+            }
+            
+            function formatTime(seconds) { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
+            function playSound(freq = 440, duration = 0.1) { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime); o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration); o.stop(audioCtx.currentTime + duration); }
+            
+            function startTimer() { 
+                if (timerState.isRunning) return; 
+                timerState.isRunning = true; 
+                ui.startPauseBtn.textContent = 'Pausar'; 
+                timerInterval = setInterval(() => { 
+                    if (timerState.mode === 'pomodoro') {
+                        timerState.secondsRemaining--; 
+                    } else { // stopwatch
+                        timerState.secondsRemaining++;
+                    }
+                    timerState.elapsedSeconds++; 
+                    ui.timerDisplay.textContent = formatTime(timerState.secondsRemaining); 
+
+                    if (timerState.mode === 'pomodoro' && timerState.secondsRemaining <= 0) { 
+                        clearInterval(timerInterval); 
+                        timerState.isRunning = false; 
+                        ui.startPauseBtn.textContent = 'Iniciar'; 
+                        playSound(660, 0.2); 
+                        setTimeout(() => playSound(660, 0.2), 300); 
+                        if (timerState.isPomodoroCycle) { 
+                            timerState.isPomodoroCycle = false; 
+                            timerState.secondsRemaining = (currentUserData?.settings?.breakTime || 5) * 60;
+                            showModal('generic', { title: "Pausa!", bodyHtml: '<p class="text-center">Hora da pausa. Bom descanso!</p>', hasSave: false });
+                        } else { 
+                            timerState.isPomodoroCycle = true; 
+                            timerState.secondsRemaining = (currentUserData?.settings?.pomodoroTime || 25) * 60;
+                            showModal('generic', { title: "De volta ao Foco!", bodyHtml: '<p class="text-center">A pausa acabou. Vamos praticar!</p>', hasSave: false });
+                        }
+                        ui.timerDisplay.textContent = formatTime(timerState.secondsRemaining);
+                    } 
+                }, 1000); 
+            }
+
+            function pauseTimer() { if (!timerState.isRunning) return; timerState.isRunning = false; ui.startPauseBtn.textContent = 'Continuar'; clearInterval(timerInterval); }
+            
+            function resetTimer() {
+                pauseTimer();
+                if (timerState.mode === 'pomodoro') {
+                    const settings = currentUserData.settings || {};
+                    const focusTime = (settings.pomodoroTime || 25) * 60;
+                    timerState.isPomodoroCycle = true;
+                    timerState.secondsRemaining = focusTime;
+                } else { // stopwatch
+                    timerState.secondsRemaining = 0;
+                }
+                timerState.elapsedSeconds = 0;
+                ui.timerDisplay.textContent = formatTime(timerState.secondsRemaining);
+            }
+
+            ui.startPauseBtn.addEventListener('click', () => { timerState.isRunning ? pauseTimer() : startTimer(); });
+            ui.resetBtn.addEventListener('click', resetTimer);
+            ui.stopSaveBtn.addEventListener('click', (e) => { if (timerState.elapsedSeconds > 0) { addHours(timerState.elapsedSeconds / 3600, e.currentTarget); resetTimer(); } else { alert("Nenhum tempo foi registrado para salvar."); } });
+
+            function createInitialData() { return { totalHours: 0, history: [], achievements: [], settings: { theme: 'night-studio', pomodoroTime: 25, breakTime: 5, customSubCategories: { illustration: ["Estudo", "Desenho de Personagem", "Cenários", "Pintura Digital"], animation: ["Princípios", "Animação de Personagem", "Efeitos (VFX)", "Storyboard"] } }, goals: { weekly: 10 } }; }
+
+            ui.mainCategorySelect.addEventListener('change', populateSubCategories);
+            ui.addHoursBtn.addEventListener('click', (e) => addHours(parseFloat(ui.hoursInput.value), e.currentTarget));
+            ui.tabButtons.forEach(btn => btn.addEventListener('click', () => updateChart(currentUserData.history || [])));
+            ui.toggleAchievementsBtn.addEventListener('click', () => { showAllAchievements = !showAllAchievements; ui.toggleAchievementsBtn.textContent = showAllAchievements ? "Ocultar Conquistas" : "Mostrar Todas"; updateAchievements(currentUserData.achievements || []); });
+            
+            let timerFocusInterval;
+            ui.focusModeBtn.addEventListener('click', () => { ui.body.classList.add('focus-mode-active'); ui.focusActivityDisplay.textContent = `${ui.mainCategorySelect.value} - ${ui.subCategorySelect.value}`; clearInterval(timerFocusInterval); timerFocusInterval = setInterval(() => { ui.focusTimerDisplay.textContent = ui.timerDisplay.textContent; }, 1000); });
+            ui.exitFocusModeBtn.addEventListener('click', () => { ui.body.classList.remove('focus-mode-active'); clearInterval(timerFocusInterval); });
+
+            async function callGemini(prompt) {
+                if (!GEMINI_API_KEY || GEMINI_API_KEY === "SUA_CHAVE_API_GEMINI_AQUI") {
+                    return "Erro: A chave da API do Gemini não foi configurada. Por favor, adicione sua chave no código HTML.";
+                }
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("API Error Response:", errorData);
+                        throw new Error(`Erro da API: ${errorData.error?.message || response.statusText}`);
+                    }
+                    const result = await response.json();
+                    return result.candidates[0].content.parts[0].text;
+                } catch (error) {
+                    console.error("Erro ao chamar a API do Gemini:", error);
+                    return "Desculpe, não foi possível obter uma resposta da IA no momento. Verifique o console para mais detalhes.";
+                }
+            }
+
+            async function generateIdeas(theme, category) {
+                showModal('generic', { title: 'Gerando Ideias ✨', bodyHtml: '<p class="text-center">Aguarde, o Gemini está trabalhando...</p>', hasSave: false });
+                const prompt = `Aja como um mentor de arte experiente. Gere 5 ideias criativas para um(a) artista de ${category}. O tema principal é: "${theme}". Para cada ideia, forneça detalhes sobre: Composição, Paleta de cores sugerida e um Elemento Surpresa ou Único. Formate a resposta usando Markdown.`;
+                const result = await callGemini(prompt);
+                showModal('generic', { title: 'Aqui estão suas Ideias ✨', bodyHtml: `<div class="gemini-output max-h-96 overflow-y-auto">${marked.parse(result)}</div>`, hasSave: false });
+            }
+
+            async function analyzeSession(note) {
+                showModal('generic', { title: 'Analisando Sessão ✨', bodyHtml: '<p class="text-center">Aguarde, o Gemini está analisando suas anotações...</p>', hasSave: false });
+                const prompt = `Aja como um mentor de arte. Analise a seguinte anotação de uma sessão de prática: "${note}". Com base nela, forneça: 1. Duas dicas práticas para superar as dificuldades mencionadas. 2. Um elogio sobre os sucessos. 3. Uma sugestão de próximo passo ou exercício. Formate a resposta usando Markdown.`;
+                const result = await callGemini(prompt);
+                showModal('generic', { title: 'Análise da Sessão ✨', bodyHtml: `<div class="gemini-output max-h-96 overflow-y-auto">${marked.parse(result)}</div>`, hasSave: false });
+            }
+
+            function showModal(type, data) {
+                let title = '', bodyHtml = '', onSave = null;
+                if (type === 'settings') {
+                    title = 'Configurações';
+                    const s = currentUserData.settings || {};
+                    bodyHtml = `
+                        <div class="space-y-4">
+                            <div><label for="theme-select-modal" class="block text-sm font-medium">Tema de Cores</label>
+                                <select id="theme-select-modal" class="w-full p-2 rounded-lg border-2">
+                                    <option value="night-studio">Ateliê Noturno</option><option value="watercolor">Aquarela Suave</option>
+                                    <option value="graphite">Grafite Urbano</option><option value="sketchbook">Caderno de Esboços</option>
+                                    <option value="retro-dream">Sonho Retrô</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label for="pomodoro-time-input" class="block text-sm font-medium">Foco (min)</label><input type="number" id="pomodoro-time-input" class="w-full p-2 rounded-lg border-2" value="${s.pomodoroTime || 25}"></div>
+                                <div><label for="break-time-input" class="block text-sm font-medium">Pausa (min)</label><input type="number" id="break-time-input" class="w-full p-2 rounded-lg border-2" value="${s.breakTime || 5}"></div>
+                            </div>
+                        </div>
+                    `;
+                    onSave = async () => { 
+                        const newSettings = { ...currentUserData.settings,
+                            theme: document.getElementById('theme-select-modal').value,
+                            pomodoroTime: parseFloat(document.getElementById('pomodoro-time-input').value) || 25,
+                            breakTime: parseFloat(document.getElementById('break-time-input').value) || 5,
+                        };
+                        await setDoc(progressDocRef, { settings: newSettings }, { merge: true });
+                        resetTimer();
+                    };
+                } else if (type === 'goal') {
+                    title = 'Editar Meta Semanal';
+                    bodyHtml = `<label for="goal-input-modal" class="block text-sm font-medium">Horas</label><input type="number" id="goal-input-modal" class="w-full p-2 rounded-lg border-2" value="${currentUserData?.goals?.weekly || 10}">`;
+                    onSave = async () => { const newGoal = parseFloat(document.getElementById('goal-input-modal').value); if (newGoal && !isNaN(newGoal) && newGoal > 0) { await setDoc(progressDocRef, { goals: { weekly: newGoal } }, { merge: true }); } };
+                } else if (type === 'subcategory') {
+                    title = `Nova Sub-categoria para "${data.mainCategory}"`;
+                    bodyHtml = `<label for="subcategory-input-modal" class="block text-sm font-medium">Nome</label><input type="text" id="subcategory-input-modal" class="w-full p-2 rounded-lg border-2">`;
+                    onSave = async () => { const newSub = document.getElementById('subcategory-input-modal').value.trim(); if (newSub) { const dataCopy = JSON.parse(JSON.stringify(currentUserData)); const subs = dataCopy.settings.customSubCategories; if (!subs[data.mainCategory].includes(newSub)) { subs[data.mainCategory].push(newSub); await setDoc(progressDocRef, { settings: { customSubCategories: subs } }, { merge: true }); } } };
+                } else if (type === 'gemini-idea') {
+                    title = 'Gerador de Ideias ✨';
+                    bodyHtml = `<label for="gemini-theme-input" class="block text-sm font-medium">Digite um tema</label><input type="text" id="gemini-theme-input" class="w-full p-2 rounded-lg border-2" placeholder="Ex: Gato astronauta, castelo flutuante...">`;
+                    onSave = () => {
+                        const theme = document.getElementById('gemini-theme-input').value.trim();
+                        if (theme) generateIdeas(theme, ui.mainCategorySelect.value);
+                    };
+                } else if (type === 'achievement') {
+                     showModal('generic', { title: "CONQUISTA DESBLOQUEADA!", bodyHtml: `<div class="text-center"><div class="text-6xl mb-4">${data.icon}</div><p class="text-xl font-bold">${data.name}</p><p class="text-sm mt-1" style="color: var(--text-secondary);">${data.desc}</p></div>`, hasSave: false });
+                     return;
+                } else if (type === 'confirm') {
+                    title = data.title;
+                    bodyHtml = `<p class="text-center">${data.message}</p>
+                        <div class="flex gap-4 mt-4">
+                            <button id="confirm-cancel-btn" class="flex-1 py-2 rounded-lg font-bold bg-slate-600">Cancelar</button>
+                            <button id="confirm-ok-btn" class="flex-1 py-2 rounded-lg font-bold bg-red-600">Confirmar</button>
+                        </div>`;
+                    ui.genericModalTitle.textContent = title;
+                    ui.genericModalBody.innerHTML = bodyHtml;
+                    ui.genericModalBackdrop.classList.remove('hidden');
+                    document.getElementById('confirm-ok-btn').onclick = () => { data.onConfirm(); ui.genericModalBackdrop.classList.add('hidden'); };
+                    document.getElementById('confirm-cancel-btn').onclick = () => ui.genericModalBackdrop.classList.add('hidden');
+                    return;
+                } else if (type === 'generic') {
+                    title = data.title; bodyHtml = data.bodyHtml;
+                }
+
+                ui.genericModalTitle.textContent = title;
+                ui.genericModalBody.innerHTML = bodyHtml + (onSave ? `<button id="generic-modal-save-btn" class="w-full mt-4 py-2 rounded-lg font-bold text-white" style="background-color: var(--accent-primary);">Salvar</button>` : '');
+                ui.genericModalBackdrop.classList.remove('hidden');
+                if(onSave) { document.getElementById('generic-modal-save-btn').onclick = async () => { await onSave(); ui.genericModalBackdrop.classList.add('hidden'); }; }
+                if (type === 'settings') { document.getElementById('theme-select-modal').value = currentUserData?.settings?.theme || 'night-studio'; }
+            }
+
+            ui.settingsBtn.addEventListener('click', () => showModal('settings'));
+            ui.editGoalBtn.addEventListener('click', () => showModal('goal'));
+            ui.addBtn.addEventListener('click', () => showModal('subcategory', { mainCategory: ui.mainCategorySelect.value }));
+            ui.geminiIdeaBtn.addEventListener('click', () => showModal('gemini-idea'));
+            ui.closeGenericModalBtn.addEventListener('click', () => ui.genericModalBackdrop.classList.add('hidden'));
+            
+            ui.removeBtn.addEventListener('click', async () => {
+                const mainCategory = ui.mainCategorySelect.value;
+                const subToRemove = ui.subCategorySelect.value;
+                if (!subToRemove) { alert("Nenhuma sub-categoria selecionada para remover."); return; }
+                showModal('confirm', {
+                    title: 'Confirmar Remoção', message: `Tem certeza que deseja remover a sub-categoria "${subToRemove}"?`,
+                    onConfirm: async () => {
+                        const dataCopy = JSON.parse(JSON.stringify(currentUserData));
+                        const subs = dataCopy.settings.customSubCategories;
+                        const index = subs[mainCategory].indexOf(subToRemove);
+                        if (index > -1) { subs[mainCategory].splice(index, 1); await setDoc(progressDocRef, { settings: { customSubCategories: subs } }, { merge: true }); }
+                    }
+                });
+            });
+
+            ui.pomodoroModeBtn.addEventListener('click', () => { timerState.mode = 'pomodoro'; resetTimer(); ui.pomodoroModeBtn.classList.add('active'); ui.stopwatchModeBtn.classList.remove('active'); });
+            ui.stopwatchModeBtn.addEventListener('click', () => { timerState.mode = 'stopwatch'; resetTimer(); ui.stopwatchModeBtn.classList.add('active'); ui.pomodoroModeBtn.classList.remove('active'); });
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    ui.userIdDisplay.textContent = `ID de Usuário Anônimo: ${userId}`;
+                    // Caminho simplificado para o banco de dados
+                    progressDocRef = doc(db, `users/${userId}/progress`);
+
+                    if (unsubscribe) unsubscribe();
+                    unsubscribe = onSnapshot(progressDocRef, (docSnap) => {
+                        let data = docSnap.exists() ? docSnap.data() : createInitialData();
+                        if (!data.settings || !data.settings.customSubCategories) data.settings = { ...data.settings, ...createInitialData().settings };
+                        if (!data.goals) data.goals = { ...createInitialData().goals };
+                        updateUI(data);
+                        ui.loadingOverlay.style.display = 'none';
+                        ui.body.classList.remove('app-loading');
+                    }, (error) => {
+                        console.error("Erro no Snapshot do Firestore: ", error);
+                        alert("Não foi possível carregar seus dados. Verifique as regras de segurança do Firestore.");
+                    });
+                } else {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch(e) { 
+                        console.error("Erro no Login Anônimo:", e);
+                        alert("Não foi possível conectar. Verifique se o Login Anônimo está habilitado no seu projeto Firebase.");
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
