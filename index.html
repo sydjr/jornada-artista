@@ -82,24 +82,21 @@
         // ==============================================================================
         // ETAPA 2 - PARTE A: COLE A CONFIGURAÇÃO DO SEU FIREBASE AQUI
         // ==============================================================================
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAbNeKNK5-TmuBs6Mtj1t2ioYY8P5W5GBM",
-  authDomain: "jornada-do-artista-10k.firebaseapp.com",
-  projectId: "jornada-do-artista-10k",
-  storageBucket: "jornada-do-artista-10k.firebasestorage.app",
-  messagingSenderId: "585104803585",
-  appId: "1:585104803585:web:8dd21b09050bc2f757fd00",
-  measurementId: "G-BX0V2X9WGK"
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbNeKNK5-TmuBs6Mtj1t2ioYY8P5W5GBM",
+            authDomain: "jornada-do-artista-10k.firebaseapp.com",
+            projectId: "jornada-do-artista-10k",
+            storageBucket: "jornada-do-artista-10k.appspot.com",
+            messagingSenderId: "585104803585",
+            appId: "1:585104803585:web:8dd21b09050bc2f757fd00",
+            measurementId: "G-BX0V2X9WGK"
         };
         // ==============================================================================
         
         // ==============================================================================
         // ETAPA 2 - PARTE B: COLE A SUA CHAVE DA API DO GEMINI AQUI (Opcional)
-        // Obtenha em: https://aistudio.google.com/app/apikey
-        // AVISO: Não compartilhe esta chave publicamente. É para seu uso pessoal.
         // ==============================================================================
-        const GEMINI_API_KEY = "AIzaSyD8MJ0HRFLSOYn0fSq0ciU6Rq1e4x7SuyA";
+        const GEMINI_API_KEY = "AIzaSyD8MJ0HRFLSOYn0fSq0ciU6Rq1e4x7SuyA"; // Lembre-se de colar sua chave aqui
         // ==============================================================================
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -386,7 +383,7 @@ const firebaseConfig = {
             ui.exitFocusModeBtn.addEventListener('click', () => { ui.body.classList.remove('focus-mode-active'); clearInterval(timerFocusInterval); });
 
             async function callGemini(prompt) {
-                if (!GEMINI_API_KEY || GEMINI_API_KEY === "SUA_CHAVE_API_GEMINI_AQUI") {
+                if (!GEMINI_API_KEY || GEMINI_API_KEY === "SUA_CHAVE_API_GEMINI_AQUI" || GEMINI_API_KEY === "SUA_CHAVE_REAL_AQUI") {
                     return "Erro: A chave da API do Gemini não foi configurada. Por favor, adicione sua chave no código HTML.";
                 }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -523,8 +520,9 @@ const firebaseConfig = {
                 if (user) {
                     userId = user.uid;
                     ui.userIdDisplay.textContent = `ID de Usuário Anônimo: ${userId}`;
-                    // Caminho simplificado para o banco de dados
-                    progressDocRef = doc(db, `users/${userId}/progress`);
+                    
+                    // AQUI ESTÁ A CORREÇÃO FINAL
+                    progressDocRef = doc(db, `users/${userId}/progress/data`);
 
                     if (unsubscribe) unsubscribe();
                     unsubscribe = onSnapshot(progressDocRef, (docSnap) => {
